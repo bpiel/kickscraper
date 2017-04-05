@@ -154,7 +154,6 @@
         y-bar (mean ys)
         dx (map (fn [x] (- x x-bar)) xs)
         dy (map (fn [y] (- y y-bar)) ys)]
-    (clojure.pprint/pprint (map * dx dy))
     (mean (map * dx dy))))
 
 
@@ -164,9 +163,11 @@
                   (let [x-avg (- x avg)]
                     (* x-avg x-avg)))
         total (count coll)]
-    (-> (/ (apply + squares)
-           total)
-        (Math/sqrt))))
+    (if-not (zero? total)
+      (-> (/ (apply + squares)
+             total)
+          (Math/sqrt))
+      0.0)))
 
 (defn correlation
   [x y]
@@ -239,6 +240,12 @@
   [id]
   (read-string (read-rsrc (id->data0-filename id))))
 
+(defn read-all-data0-rsrcs
+  []
+  (mapv (comp read-string slurp)
+        (filter #(.isFile %)
+                (file-seq (clojure.java.io/file "./resources/data0")))))
+
 (defn data0-rsrc-exists?
   [id]
   (file-exists? (id->data0-filename id)))
@@ -258,9 +265,48 @@
   [id]
   (throw (Exception. "NOT IMPLEMENTED")))
 
-(defn analyze-data1->final
-  [id]
-  (throw (Exception. "NOT IMPLEMENTED")))
+(defn correlate-keys
+  [ks1 ks2 d]
+  (def ks11 ks1)
+  (def ks21 ks2)
+  (def d1 d)
+  (let [ks1-fn #(get-in % ks1)
+        ks2-fn #(get-in % ks2)
+        d' (filter (every-pred ks1-fn ks2-fn) d)]
+    (if (not-empty d')
+      (try
+        (correlation (map ks1-fn d')
+                     (map ks2-fn d'))
+        (catch Exception e
+          (println "FAIL:" ks2)
+          0.0))
+      0.0)))
+
+(def cc-props
+  [[:goal]
+   [:backers-count]
+   [:duration]
+   [:pa-stats :count]
+   [:pa-stats :max]
+   [:pa-stats :min]
+   [:pa-stats :avg]
+   [:pa-stats :median]
+   [:pa-stats :p90]
+   [:pa-stats :std-dev]
+   [:b-stats :count]
+   [:b-stats :max]
+   [:b-stats :min]
+   [:b-stats :avg]
+   [:b-stats :median]
+   [:b-stats :p90]
+   [:b-stats :std-dev]])
+
+(defn analyze-data0
+  [d0]
+  (clojure.pprint/pprint 
+   (sort-by second
+            (for [k cc-props]
+              [k (correlate-keys [:pledged] k d0)]))))
 
 (defn update-html-rsrcs
   [& [pages]]
@@ -276,7 +322,9 @@
 (defn do-analysis
   []
   (do-all-html->data0)
-  (analyze-data1->final (mk-all-data1)))
+  (analyze-data0 (read-all-data0-rsrcs)))
+
+(do-analysis)
 
 (defn -main
   "I don't do a whole lot ... yet."
