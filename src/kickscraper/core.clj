@@ -317,7 +317,7 @@
             (write-html-rsrc id
                              (request-html url)))))))
 
-#_ (update-html-rsrcs 1)
+#_ (update-html-rsrcs 10)
 
 (defn do-analysis
   []
