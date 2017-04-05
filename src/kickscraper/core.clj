@@ -218,7 +218,7 @@
      :pledged pledged
      :backers-count (extract-prop-double "data-backers-count" h)
      :goal goal
-     :success? (if (>= pledged goal) 1 0)
+     :success? (if ((fnil >= 0 0) pledged goal) 1 0)
      :duration (extract-prop-double "data-duration" h)
      :end-time (extract-prop-double "data-end_time" h)
      :pab pledge-amt-backers
@@ -317,14 +317,14 @@
             (write-html-rsrc id
                              (request-html url)))))))
 
-#_ (update-html-rsrcs 10)
+#_ (update-html-rsrcs 30)
 
 (defn do-analysis
   []
   (do-all-html->data0)
   (analyze-data0 (read-all-data0-rsrcs)))
 
-(do-analysis)
+#_ (do-analysis)
 
 (defn -main
   "I don't do a whole lot ... yet."
