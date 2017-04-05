@@ -66,14 +66,14 @@
 
 (defn write-html-to-file
   [id html]
-  (spit (id->filename id)
+  (spit (id->html-filename id)
         html)
   html)
 
-(defn fetch-html-for-id
+#_(defn fetch-html-for-id
   [id]
   (or (-> id
-          id->filename
+          id->html-filename
           read-file-if-exists)
       (->> id
            get-html-for-id
@@ -101,6 +101,17 @@
   [id]
   (file-exists? (id->html-filename id)))
 
+(defn extract-prop
+  [prop h]
+  (second (re-find (re-pattern (str prop "=\"([^\"]*)\""))
+                   h)))
+
+(defn extract-prop-double
+  [prop h]
+  (try
+    (Double/parseDouble (extract-prop prop h))
+    (catch Exception e nil)))
+
 (defn get-all-html-rsrc-ids
   []
   (mapv #(.getName %)
@@ -108,15 +119,115 @@
                 (file-seq (clojure.java.io/file "./resources/html")))))
 
 (defn parse-html-title [h] (second (re-find #"<title>([^>]*)</title>" h)))
-(defn parse-html-pledged [h]
+
+(def parse-html-pledged (partial extract-prop-double "data-pledged"))
+(def parse-html-backers-count (partial extract-prop-double "data-backers-count"))
+
+(defn parse-html-pledge-amounts
+  [h]
+  (mapv (comp #(Double/parseDouble %) second)
+        (re-seq #"Pledge <span class=\"money\">.(\d+)<"
+                h)))
+
+(defn parse-html-backers
+  [h]
+  (mapv (comp #(Double/parseDouble %) second)
+        (re-seq #"(\d+) backers"
+                h)))
+
+(defn parse-html-pledge-amt-backers
+  [h]
+  (mapv #(vector % %2 (* % %2))
+        (parse-html-pledge-amounts h)
+        (parse-html-backers h)))
+
+(defn mean [coll]
+  (let [sum (apply + coll)
+        count (count coll)]
+    (if (pos? count)
+      (/ sum count)
+      0)))
+
+(defn covariance
+  [xs ys]
+  (let [x-bar (mean xs)
+        y-bar (mean ys)
+        dx (map (fn [x] (- x x-bar)) xs)
+        dy (map (fn [y] (- y y-bar)) ys)]
+    (clojure.pprint/pprint (map * dx dy))
+    (mean (map * dx dy))))
+
+
+(defn standard-deviation [coll]
+  (let [avg (mean coll)
+        squares (for [x coll]
+                  (let [x-avg (- x avg)]
+                    (* x-avg x-avg)))
+        total (count coll)]
+    (-> (/ (apply + squares)
+           total)
+        (Math/sqrt))))
+
+(defn correlation
+  [x y]
+  (/ (covariance x y)
+     (* (standard-deviation x)
+        (standard-deviation y))))
+
+
+
+(defn safe-div-double
+  [a b]
   (try
-    (Double/parseDouble (second (re-find #"data-pledged=\"([^\"]*)\"" h)))
+    (double (/ a b))
     (catch Exception e nil)))
+
+(defn get-stats
+  [v]
+  (when (not-empty v)
+    (let [v' (vec (sort v))
+          c (count v)
+          t (apply + v)
+          avg (safe-div-double t c)
+          median (get v' (quot c 2))
+          p90 (get v' (quot (* c 9) 10))
+          mx (apply max v)
+          mn (apply min v)]
+      {:count c
+       :sum t
+       :avg avg
+       :median median
+       :p90 p90
+       :max mx
+       :min mn
+       :std-dev (standard-deviation v)})))
+
+
+#_
+(parse-html-pledge-amt-backers (slurp "./resources/html/learn-5-best-mobile-development-frameworks__1311831077"))
 
 (defn html->data0
   [h]
-  {:title (parse-html-title h)
-   :pledged (parse-html-pledged h)})
+  (let [pledge-amt-backers (parse-html-pledge-amt-backers h)
+        hi-pledged (last (sort-by last pledge-amt-backers))
+        hi-backed (last (sort-by second pledge-amt-backers))
+        pledged (extract-prop-double "data-pledged" h)
+        goal (extract-prop-double "data-goal" h)]
+    {:title (parse-html-title h)
+     :pledged pledged
+     :backers-count (extract-prop-double "data-backers-count" h)
+     :goal goal
+     :success? (if (>= pledged goal) 1 0)
+     :duration (extract-prop-double "data-duration" h)
+     :end-time (extract-prop-double "data-end_time" h)
+     :pab pledge-amt-backers
+     :pa-stats (get-stats (map first pledge-amt-backers))
+     :b-stats (get-stats (map second pledge-amt-backers))
+     :hi-pleged hi-pledged
+     :hi-backed hi-backed}))
+
+#_(html->data0 (slurp "./resources/html/learn-5-best-mobile-development-frameworks__1311831077"))
+
 
 (defn write-data0-rsrc
   [id d]
