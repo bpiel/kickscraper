@@ -1,1 +1,1 @@
-{:hi-pleged nil, :backers-count 72.0, :goal 125000.0, :pa-stats nil, :end-time nil, :duration 30.0, :title "\nCocos2D-PureSwift by Lars Birkemose &mdash; \nKickstarter\n", :hi-backed nil, :pledged 43565.0, :pab [], :b-stats nil, :success? 0}
+{:hi-pleged nil, :pab-pt {}, :backers-count 72.0, :goal 125000.0, :pa-stats nil, :end-time nil, :duration 30.0, :title "\nCocos2D-PureSwift by Lars Birkemose &mdash; \nKickstarter\n", :hi-backed nil, :pledged 43565.0, :pab [], :b-stats nil, :success? 0}

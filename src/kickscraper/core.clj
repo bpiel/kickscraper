@@ -70,15 +70,6 @@
         html)
   html)
 
-#_(defn fetch-html-for-id
-  [id]
-  (or (-> id
-          id->html-filename
-          read-file-if-exists)
-      (->> id
-           get-html-for-id
-           (write-html-to-file id))))
-
 (defn read-rsrc
   [filename]
   (when (-> filename
@@ -203,12 +194,42 @@
        :min mn
        :std-dev (standard-deviation v)})))
 
+(defn update-pab-percentiles
+  [[amt] lo hi total m]
+  (if-not (zero? total)
+    (reduce (fn [agg x] (assoc agg (int x) amt))
+            m
+            (filter #(zero? (mod % 5))
+                    (range (quot (* 100.0 lo) total)
+                           (quot (* 100.0 hi) total))))
+    m))
+
+(defn pab-percentiles
+  [pab]
+  (let [total (apply + (map last pab))]
+    (loop [[head & tail] pab
+           x-lo 0
+           x-hi 0
+           agg {}]
+      (if head
+        (let [x-lo' x-hi
+              x-hi' (+ x-lo (last head))]
+          (recur tail
+                 x-lo'
+                 x-hi'
+                 (update-pab-percentiles head
+                                         x-lo'
+                                         x-hi'
+                                         total
+                                         agg)))
+        agg))))
 
 #_
 (parse-html-pledge-amt-backers (slurp "./resources/html/learn-5-best-mobile-development-frameworks__1311831077"))
 
 (defn html->data0
   [h]
+  (def h1 h)
   (let [pledge-amt-backers (parse-html-pledge-amt-backers h)
         hi-pledged (last (sort-by last pledge-amt-backers))
         hi-backed (last (sort-by second pledge-amt-backers))
@@ -222,10 +243,13 @@
      :duration (extract-prop-double "data-duration" h)
      :end-time (extract-prop-double "data-end_time" h)
      :pab pledge-amt-backers
+     :pab-pt (pab-percentiles pledge-amt-backers)
      :pa-stats (get-stats (map first pledge-amt-backers))
      :b-stats (get-stats (map second pledge-amt-backers))
      :hi-pleged hi-pledged
      :hi-backed hi-backed}))
+
+
 
 #_(html->data0 (slurp "./resources/html/learn-5-best-mobile-development-frameworks__1311831077"))
 
@@ -299,7 +323,15 @@
    [:b-stats :avg]
    [:b-stats :median]
    [:b-stats :p90]
-   [:b-stats :std-dev]])
+   [:b-stats :std-dev]
+   [:pab-pt 10]
+   [:pab-pt 25]
+   [:pab-pt 50]
+   [:pab-pt 75]
+   [:pab-pt 90]
+   [:pab-pt 95]
+   [:hi-backed 0]
+   [:hi-pleged 0]])
 
 (defn analyze-data0
   [d0]
@@ -324,9 +356,59 @@
   (do-all-html->data0)
   (analyze-data0 (read-all-data0-rsrcs)))
 
+(defn print-csv
+  [& ks]
+  (println)
+  (doseq [r (read-all-data0-rsrcs)]
+    (println (clojure.string/join "," (map #(get-in r %) ks))))
+  (println))
+
+#_ (print-csv [:pledged] [:pab-pt 50])
+
 #_ (do-analysis)
 
 (defn -main
   "I don't do a whole lot ... yet."
   [& args]
   (println "Hello, World!"))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

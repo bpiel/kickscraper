@@ -1,1 +1,1 @@
-{:hi-pleged nil, :backers-count 4.0, :goal 10000.0, :pa-stats nil, :end-time nil, :duration 30.0, :title "\nThe Ninja: A voice control platform for your home and pc by Chris Pretorius &mdash; \nKickstarter\n", :hi-backed nil, :pledged 101.0, :pab [], :b-stats nil, :success? 0}
+{:hi-pleged nil, :pab-pt {}, :backers-count 4.0, :goal 10000.0, :pa-stats nil, :end-time nil, :duration 30.0, :title "\nThe Ninja: A voice control platform for your home and pc by Chris Pretorius &mdash; \nKickstarter\n", :hi-backed nil, :pledged 101.0, :pab [], :b-stats nil, :success? 0}
