@@ -117,14 +117,39 @@
 
 (defn parse-html-title [h] (second (re-find #"<title>([^>]*)</title>" h)))
 
-(def parse-html-pledged (partial extract-prop-double "data-pledged"))
-(def parse-html-backers-count (partial extract-prop-double "data-backers-count"))
+(defn parse-html-pledged
+  [h]
+  (or (extract-prop-double "data-pledged" h)
+      (Double/parseDouble (second (re-find #";pledged&quot;:([\d.]+),"
+                                           h)))))
+
+(defn parse-html-backers-count
+  [h]
+  (or (extract-prop-double "data-backers-count" h)
+      (Integer/parseInt (clojure.string/replace (second (re-find #">([\d,]+) backers" h)) "," ""))))
+
+(defn parse-html-goal
+  [h]
+  (try
+    (or (extract-prop-double "data-goal" h)
+        (Double/parseDouble (clojure.string/replace (second (re-find #"pledged of <span class=\"money\">\$([\d,]+)</span>"
+                                                                     h))
+                                                    "," "")))
+    (catch Exception e
+      nil)))
 
 (defn parse-html-pledge-amounts
   [h]
   (mapv (comp #(Double/parseDouble %) second)
         (re-seq #"Pledge <span class=\"money\">.(\d+)<"
                 h)))
+
+(defn parse-html-end-time
+  [h]
+  (or (extract-prop-double "data-end_time" h)
+      (Long/parseLong (second (re-find #"deadline\&quot;:(\d+),"
+                                          h)))))
+
 
 (defn parse-html-backers
   [h]
@@ -239,15 +264,15 @@
   (let [pledge-amt-backers (parse-html-pledge-amt-backers h)
         hi-pledged (last (sort-by last pledge-amt-backers))
         hi-backed (last (sort-by second pledge-amt-backers))
-        pledged (extract-prop-double "data-pledged" h)
-        goal (extract-prop-double "data-goal" h)]
+        pledged (parse-html-pledged h)
+        goal (parse-html-goal h)]
     {:title (parse-html-title h)
      :pledged pledged
-     :backers-count (extract-prop-double "data-backers-count" h)
+     :backers-count (parse-html-backers-count h)
      :goal goal
      :success? (if ((fnil >= 0 0) pledged goal) 1 0)
      :duration (extract-prop-double "data-duration" h)
-     :end-time (extract-prop-double "data-end_time" h)
+     :end-time (parse-html-end-time h)
      :pab pledge-amt-backers
      :pab-pt (pab-percentiles pledge-amt-backers)
      :pa-stats (get-stats (map first pledge-amt-backers))
@@ -259,6 +284,7 @@
 
 #_(html->data0 (slurp "./resources/html/learn-5-best-mobile-development-frameworks__1311831077"))
 
+#_ (clojure.pprint/pprint  (html->data0 (slurp "./resources/html/light-table__ibdknox")))
 
 (defn write-data0-rsrc
   [id d]
@@ -304,8 +330,9 @@
         ks2-fn #(get-in % ks2)
         d' (->> d
                 (filter (every-pred ks1-fn ks2-fn))
-                (filter #(<= (:goal %) (:pledged %))))]
-    (clojure.pprint/pprint d')
+                (filter #(and (:goal %) (:pledged %)))
+;                (filter #(<= (:goal %) (:pledged %)))
+                )]
     (if (not-empty d')
       (try
         (correlation (map ks1-fn d')
@@ -340,7 +367,8 @@
    [:pab-pt 90]
    [:pab-pt 95]
    [:hi-backed 0]
-   [:hi-pleged 0]])
+   [:hi-pleged 0]
+   [:end-time]])
 
 (defn analyze-data0
   [d0]
@@ -377,10 +405,27 @@
 
 #_ (do-analysis)
 
-#_(clojure.pprint/pprint  (mapv :title (read-all-data0-rsrcs)))
+#_(clojure.pprint/pprint  (mapv  (juxt :title :goal) (read-all-data0-rsrcs)))
 
 
 (defn -main
   "I don't do a whole lot ... yet."
   [& args]
   (println "Hello, World!"))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

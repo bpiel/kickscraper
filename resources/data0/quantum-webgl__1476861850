@@ -1,1 +1,1 @@
-{:hi-pleged nil, :pab-pt {}, :backers-count nil, :goal nil, :pa-stats nil, :end-time nil, :duration nil, :title "\nQuantum WebGL by Henning Dekant &mdash; \nKickstarter\n", :hi-backed nil, :pledged nil, :pab [], :b-stats nil, :success? 1}
+{:hi-pleged nil, :pab-pt {}, :backers-count 20, :goal nil, :pa-stats nil, :end-time 1438476025, :duration nil, :title "\nQuantum WebGL by Henning Dekant &mdash; \nKickstarter\n", :hi-backed nil, :pledged 8111.0, :pab [], :b-stats nil, :success? 1}
