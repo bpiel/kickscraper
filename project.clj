@@ -6,7 +6,8 @@
   :dependencies [[org.clojure/clojure "1.9.0-alpha15"]
                  [clj-http "2.3.0"]
                  [clj-time "0.13.0"]
-                 [cheshire "5.7.0"]]
+                 [cheshire "5.7.0"]
+                 [com.hypirion/clj-xchart "0.2.0"]]
   :main ^:skip-aot kickscraper.core
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all}})

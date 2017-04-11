@@ -1,6 +1,7 @@
 (ns kickscraper.core
   (:require [clj-http.client :as client]
-            [cheshire.core :as json])
+            [cheshire.core :as json]
+            [com.hypirion.clj-xchart :as xc])
   (:gen-class))
 
 (def ^:dynamic *sleepy-req?* false)
@@ -331,7 +332,7 @@
         d' (->> d
                 (filter (every-pred ks1-fn ks2-fn))
                 (filter #(and (:goal %) (:pledged %)))
-;                (filter #(<= (:goal %) (:pledged %)))
+                (filter #(<= (:goal %) (:pledged %)))
                 )]
     (if (not-empty d')
       (try
@@ -401,17 +402,65 @@
     (println (clojure.string/join "," (map #(get-in r %) ks))))
   (println))
 
+(defn chart
+  [d x y]
+  (let [x-fn #(get-in % x)
+        y-fn #(get-in % y)
+        d' (filter (every-pred x-fn y-fn) d)]
+    (xc/view (xc/xy-chart
+              {"series" {:x (map x-fn d')
+                         :y (map y-fn d')}}
+              {:title (str y " over " x)
+               :render-style :scatter
+               :theme :matlab
+               :y-axis {:logarithmic? true}
+               :x-axis {:logarithmic? true}}))))
+
 #_ (print-csv [:pledged] [:pab-pt 50])
 
 #_ (do-analysis)
 
 #_(clojure.pprint/pprint  (mapv  (juxt :title :goal) (read-all-data0-rsrcs)))
 
+#_ (chart (filter #(-> % :pledged (> 0)) (read-all-data0-rsrcs)) [:goal]  [:pledged])
 
 (defn -main
   "I don't do a whole lot ... yet."
   [& args]
   (println "Hello, World!"))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
