@@ -12,14 +12,20 @@
       (Thread/sleep 1000))
     r))
 
+(def project-index-url "https://www.kickstarter.com/discover/advanced?google_chrome_workaround&category_id=51&woe_id=0&sort=end_date&seed=2485394&page=")
+
+(def project-index-url "https://www.kickstarter.com/discover/advanced?google_chrome_workaround&category_id=51&woe_id=0&sort=most_funded&seed=2485394&page=")
+
 (defn get-projects-by-page-num
   [n]
-  (select-keys (json/parse-string
-                (:body
-                 (maybe-sleepy-get (str "https://www.kickstarter.com/discover/advanced?google_chrome_workaround&category_id=51&woe_id=0&sort=end_date&seed=2485394&page=" n)
-                             {:headers {"Accept" "application/json"}}))
-                keyword)
-               [:projects :has_more]))
+  (let [url (str project-index-url n)]
+    (println "DOWNLOADING! " url)
+    (select-keys (json/parse-string
+                  (:body
+                   (maybe-sleepy-get url
+                                     {:headers {"Accept" "application/json"}}))
+                  keyword)
+                 [:projects :has_more])))
 
 (defn get-project-urls
   [& [max-pages]]
@@ -39,7 +45,7 @@
 
 (defn project-url->id
   [url]
-  (let [[_ profile-id proj-name] (re-find #"projects/(\d+)/([^?]+)" url)]
+  (let [[_ profile-id proj-name] (re-find #"projects/([\d\w]+)/([^?]+)" url)]
     (when (and profile-id proj-name)
       (format "%s__%s"
               proj-name
@@ -296,7 +302,10 @@
   (def d1 d)
   (let [ks1-fn #(get-in % ks1)
         ks2-fn #(get-in % ks2)
-        d' (filter (every-pred ks1-fn ks2-fn) d)]
+        d' (->> d
+                (filter (every-pred ks1-fn ks2-fn))
+                (filter #(<= (:goal %) (:pledged %))))]
+    (clojure.pprint/pprint d')
     (if (not-empty d')
       (try
         (correlation (map ks1-fn d')
@@ -345,11 +354,12 @@
   (binding [*sleepy-req?* true]
     (doseq [url (get-project-urls pages)]
       (let [id (project-url->id url)]
+        (println "CHECKING " id)
         (or (html-rscr-exists? id)
             (write-html-rsrc id
                              (request-html url)))))))
 
-#_ (update-html-rsrcs 360)
+#_ (update-html-rsrcs 100)
 
 (defn do-analysis
   []
@@ -367,48 +377,10 @@
 
 #_ (do-analysis)
 
+#_(clojure.pprint/pprint  (mapv :title (read-all-data0-rsrcs)))
+
+
 (defn -main
   "I don't do a whole lot ... yet."
   [& args]
   (println "Hello, World!"))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
