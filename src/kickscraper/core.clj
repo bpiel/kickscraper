@@ -133,16 +133,20 @@
   [h]
   (try
     (or (extract-prop-double "data-goal" h)
-        (Double/parseDouble (clojure.string/replace (second (re-find #"pledged of <span class=\"money\">\$([\d,]+)</span>"
+        (Double/parseDouble (clojure.string/replace (second (re-find #"pledged of <span class=\"money\">\$([\d.,]+)</span>"
                                                                      h))
                                                     "," "")))
     (catch Exception e
       nil)))
 
+(defn remove-commas
+  [s]
+  (clojure.string/replace s #"," ""))
+
 (defn parse-html-pledge-amounts
   [h]
-  (mapv (comp #(Double/parseDouble %) second)
-        (re-seq #"Pledge <span class=\"money\">.(\d+)<"
+  (mapv (comp #(Double/parseDouble %) remove-commas second)
+        (re-seq #"Pledge <span class=\"money\">.([\d.,]+)<"
                 h)))
 
 (defn parse-html-end-time
@@ -154,8 +158,9 @@
 
 (defn parse-html-backers
   [h]
-  (mapv (comp #(Double/parseDouble %) second)
-        (re-seq #"(\d+) backers"
+  (def h1 h)
+  (mapv (comp #(Double/parseDouble %) remove-commas second)
+        (re-seq #"\n([\d,]+) backers"
                 h)))
 
 (defn parse-html-pledge-amt-backers
@@ -198,8 +203,6 @@
      (* (standard-deviation x)
         (standard-deviation y))))
 
-
-
 (defn safe-div-double
   [a b]
   (try
@@ -225,6 +228,8 @@
        :max mx
        :min mn
        :std-dev (standard-deviation v)})))
+
+#_(get-stats [20 20 30 40 50 70 80 100 150 200 400 600 1000 2000 3000 5000])
 
 (defn update-pab-percentiles
   [[amt] lo hi total m]
@@ -259,6 +264,12 @@
 #_
 (parse-html-pledge-amt-backers (slurp "./resources/html/learn-5-best-mobile-development-frameworks__1311831077"))
 
+(defn get-multiples
+  [v]
+  (mapv #(double (/ %2 (max % 0.1)))
+        v
+        (drop 1 v)))
+
 (defn html->data0
   [h]
   (def h1 h)
@@ -278,12 +289,12 @@
      :pab-pt (pab-percentiles pledge-amt-backers)
      :pa-stats (get-stats (map first pledge-amt-backers))
      :b-stats (get-stats (map second pledge-amt-backers))
+     :pam-stats (get-stats (get-multiples (map first pledge-amt-backers)))
      :hi-pleged hi-pledged
      :hi-backed hi-backed}))
 
 
-
-#_(html->data0 (slurp "./resources/html/learn-5-best-mobile-development-frameworks__1311831077"))
+#_ (clojure.pprint/pprint  (html->data0 (slurp "./resources/html/font-awesome-5__232193852")))
 
 #_ (clojure.pprint/pprint  (html->data0 (slurp "./resources/html/light-table__ibdknox")))
 
@@ -354,6 +365,13 @@
    [:pa-stats :median]
    [:pa-stats :p90]
    [:pa-stats :std-dev]
+   [:pam-stats :count]
+   [:pam-stats :max]
+   [:pam-stats :min]
+   [:pam-stats :avg]
+   [:pam-stats :median]
+   [:pam-stats :p90]
+   [:pam-stats :std-dev]
    [:b-stats :count]
    [:b-stats :max]
    [:b-stats :min]
@@ -402,11 +420,21 @@
     (println (clojure.string/join "," (map #(get-in r %) ks))))
   (println))
 
+(defn ffff
+  [x y m]
+  (try
+    (and (> (or (x m) -1) 0)
+         (> (or (y m) -1) 0))
+    (catch Throwable e      
+      (clojure.pprint/pprint m)
+      (throw e))))
+
 (defn chart
   [d x y]
-  (let [x-fn #(get-in % x)
-        y-fn #(get-in % y)
-        d' (filter (every-pred x-fn y-fn) d)]
+  (let [x-fn #(get-in % x -1)
+        y-fn #(get-in % y -1)
+        d' (filter (partial ffff x-fn y-fn)
+                   d)]
     (xc/view (xc/xy-chart
               {"series" {:x (map x-fn d')
                          :y (map y-fn d')}}
@@ -414,67 +442,56 @@
                :render-style :scatter
                :theme :matlab
                :y-axis {:logarithmic? true}
-               :x-axis {:logarithmic? true}}))))
+              :x-axis {:logarithmic? true}
+               :width 1500
+               :height 950}))))
 
 #_ (print-csv [:pledged] [:pab-pt 50])
 
 #_ (do-analysis)
 
-#_(clojure.pprint/pprint  (mapv  (juxt :title :goal) (read-all-data0-rsrcs)))
+#_(clojure.pprint/pprint (sort-by #(get % 2)  (mapv  (juxt :title :goal :pledged) (read-all-data0-rsrcs))))
 
 #_ (chart (filter #(-> % :pledged (> 0)) (read-all-data0-rsrcs)) [:goal]  [:pledged])
+
+#_ (chart (filter #(-> % :pledged (> 0)) (read-all-data0-rsrcs)) [:hi-backed 0]  [:pledged])
+
+; 15-19 levels
+#_ (chart (filter #(-> % :pledged (> 0)) (read-all-data0-rsrcs)) [:pa-stats :count]  [:pledged])
+
+; data is missing?
+#_ (chart (filter #(-> % :pledged (> 0)) (read-all-data0-rsrcs)) [:duration]  [:pledged])
+
+; avg multi < 2
+#_ (chart (filter #(-> % :pledged (> 0)) (read-all-data0-rsrcs)) [:pam-stats :avg]  [:pledged])
+
+ ; median multi < 2
+#_ (chart (filter #(-> % :pledged (> 0)) (read-all-data0-rsrcs)) [:pam-stats :median]  [:pledged])
+
+; 2 - 25
+#_ (chart (filter #(-> % :pledged (> 0)) (read-all-data0-rsrcs)) [:pa-stats :min]  [:pledged])
+
+; 500 - 10k
+#_ (chart (filter #(-> % :pledged (> 0)) (read-all-data0-rsrcs)) [:pa-stats :max]  [:pledged])
+
+; around 1k
+#_ (chart (filter #(-> % :pledged (> 0)) (read-all-data0-rsrcs)) [:pa-stats :avg]  [:pledged])
+
+; 100 - 200
+#_ (chart (filter #(-> % :pledged (> 0)) (read-all-data0-rsrcs)) [:pa-stats :median]  [:pledged])
+
+; 2 - 5
+#_ (chart (filter #(-> % :pledged (> 0)) (read-all-data0-rsrcs)) [:pam-stats :max]  [:pledged])
+
+; 1-2
+#_ (chart (filter #(-> % :pledged (> 0)) (read-all-data0-rsrcs)) [:pam-stats :min]  [:pledged])
+
+; low
+#_ (chart (filter #(-> % :pledged (> 0)) (read-all-data0-rsrcs)) [:goal]  [:pledged])
+
+
 
 (defn -main
   "I don't do a whole lot ... yet."
   [& args]
   (println "Hello, World!"))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
