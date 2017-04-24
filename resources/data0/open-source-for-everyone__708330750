@@ -1,1 +1,1 @@
-{:pam-stats nil, :hi-pleged nil, :pab-pt {}, :backers-count 2.0, :goal 38000.0, :pa-stats nil, :end-time 1467047811, :duration 30.0, :title "\nOpen Source For Everyone by William Stewart &mdash; \nKickstarter\n", :hi-backed nil, :pledged 2.0, :pab [], :b-stats nil, :success? 0}
+{:pam-stats nil, :hi-pleged nil, :pab-pt {}, :backers-count 2.0, :goal 38000.0, :pa-stats nil, :end-time 1467047811, :duration 30.0, :title "\nOpen Source For Everyone by William Stewart &mdash; \nKickstarter\n", :hi-backed nil, :pledged 2.0, :pab [], :b-stats nil, :success? false, :wc 747}

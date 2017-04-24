@@ -1,1 +1,1 @@
-{:pam-stats nil, :hi-pleged nil, :pab-pt {}, :backers-count 1009, :goal nil, :pa-stats nil, :end-time 1428198045, :duration nil, :title "\nInteractive Python tutorials by Ivelin Demirov &mdash; \nKickstarter\n", :hi-backed nil, :pledged 21926.0, :pab [], :b-stats nil, :success? 1}
+{:pam-stats nil, :hi-pleged nil, :pab-pt {}, :backers-count 1009, :goal nil, :pa-stats nil, :end-time 1428198045, :duration 35, :title "\nInteractive Python tutorials by Ivelin Demirov &mdash; \nKickstarter\n", :hi-backed nil, :pledged 21926.0, :pab [], :b-stats nil, :success? true, :wc 1129}

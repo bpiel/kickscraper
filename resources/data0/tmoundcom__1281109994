@@ -1,1 +1,1 @@
-{:pam-stats nil, :hi-pleged nil, :pab-pt {}, :backers-count 2, :goal 1.0, :pa-stats nil, :end-time 1475666029, :duration nil, :title "\nTMound.com by Armorlog LLC &mdash; \nKickstarter\n", :hi-backed nil, :pledged 150.0, :pab [], :b-stats nil, :success? 1}
+{:pam-stats nil, :hi-pleged nil, :pab-pt {}, :backers-count 2, :goal 1.0, :pa-stats nil, :end-time 1475666029, :duration 60, :title "\nTMound.com by Armorlog LLC &mdash; \nKickstarter\n", :hi-backed nil, :pledged 150.0, :pab [], :b-stats nil, :success? true, :wc 277}

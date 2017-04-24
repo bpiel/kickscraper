@@ -169,12 +169,31 @@
         (parse-html-pledge-amounts h)
         (parse-html-backers h)))
 
+(defn parse-html-duration
+  [h]
+  (def h1 h)
+  (or (extract-prop-double "data-duration" h)
+      (Integer/parseInt (second (re-find #"\((\d+)\sdays\)"
+                                         h)))))
+
+(defn parse-html-wordcount
+  [h]
+  (def h1 h)
+  (count (re-seq #"\w+" (second
+                         (re-find #"(?s)full-description(.+?)Report\sthis\sproject" h)))))
+
 (defn mean [coll]
   (let [sum (apply + coll)
         count (count coll)]
     (if (pos? count)
       (/ sum count)
       0)))
+
+(defn median [coll]
+  (try
+    (nth (sort coll) (quot (count coll) 2))
+    (catch Exception e
+      -1)))
 
 (defn covariance
   [xs ys]
@@ -282,8 +301,8 @@
      :pledged pledged
      :backers-count (parse-html-backers-count h)
      :goal goal
-     :success? (if ((fnil >= 0 0) pledged goal) 1 0)
-     :duration (extract-prop-double "data-duration" h)
+     :success? ((fnil >= 0 0) pledged goal)
+     :duration (parse-html-duration h)
      :end-time (parse-html-end-time h)
      :pab pledge-amt-backers
      :pab-pt (pab-percentiles pledge-amt-backers)
@@ -291,7 +310,8 @@
      :b-stats (get-stats (map second pledge-amt-backers))
      :pam-stats (get-stats (get-multiples (map first pledge-amt-backers)))
      :hi-pleged hi-pledged
-     :hi-backed hi-backed}))
+     :hi-backed hi-backed
+     :wc (parse-html-wordcount h)}))
 
 
 #_ (clojure.pprint/pprint  (html->data0 (slurp "./resources/html/font-awesome-5__232193852")))
@@ -387,7 +407,8 @@
    [:pab-pt 95]
    [:hi-backed 0]
    [:hi-pleged 0]
-   [:end-time]])
+   [:end-time]
+   [:wc]])
 
 (defn analyze-data0
   [d0]
@@ -429,22 +450,58 @@
       (clojure.pprint/pprint m)
       (throw e))))
 
+
+
 (defn chart
   [d x y]
   (let [x-fn #(get-in % x -1)
         y-fn #(get-in % y -1)
-        d' (filter (partial ffff x-fn y-fn)
-                   d)]
+        ds (filter :success? d)
+        df (remove :success? d)
+        ds' (filter (partial ffff x-fn y-fn)
+                    ds)
+        df' (filter (partial ffff x-fn y-fn)
+                    df)
+        xs (map x-fn ds')
+        ys (map y-fn ds')
+        xf (map x-fn df')
+        yf (map y-fn df')]
+    (println "====================")
+    (println (double (mean xs)))
+    (println (double (median xs)))
+    (println (double (mean xf)))
+    (println (double (median xf)))
+    (println "====================")
     (xc/view (xc/xy-chart
-              {"series" {:x (map x-fn d')
-                         :y (map y-fn d')}}
+              {"success" {:x xs
+                          :y ys
+                          :style {:marker-color :green}}
+               "fail" {:x xf
+                       :y yf
+                       :style {:marker-color :red}}}
+              
               {:title (str y " over " x)
                :render-style :scatter
                :theme :matlab
                :y-axis {:logarithmic? true}
-              :x-axis {:logarithmic? true}
+               :x-axis {:logarithmic? true}
                :width 1500
-               :height 950}))))
+               :height 950
+               :legend {:visible? false}}))))
+
+(defn ->json
+  [x x-name]
+  (println (json/generate-string
+            (map-indexed #(-> %2
+                              (select-keys [:pledged :success?])
+                              (assoc :idx %
+                                     x-name (get-in %2 x)))
+                         (filter #(and (some-> % :pledged (> 0))
+                                       (get-in % x)
+                                       (< 0 (get-in % x)))
+                                 (read-all-data0-rsrcs))))))
+
+#_ (->json [:wc] :word-count)
 
 #_ (print-csv [:pledged] [:pab-pt 50])
 
@@ -452,18 +509,47 @@
 
 #_(clojure.pprint/pprint (sort-by #(get % 2)  (mapv  (juxt :title :goal :pledged) (read-all-data0-rsrcs))))
 
+#_ (chart (filter #(-> % :pledged (> 0)) (read-all-data0-rsrcs)) [:backers-count]  [:pledged])
+
+#_ (chart (filter #(-> % :pledged (> 0)) (read-all-data0-rsrcs)) [:pab-pt 75]  [:pledged])
+
 #_ (chart (filter #(-> % :pledged (> 0)) (read-all-data0-rsrcs)) [:goal]  [:pledged])
 
+
+#_(println (json/generate-string
+          (take 10 (map-indexed #(-> %2
+                                     (select-keys [:goal :pledged])
+                                     (assoc :idx %))
+                                (filter #(-> % :pledged (> 0)) (read-all-data0-rsrcs))))))
+
+#_ (println (json/generate-string
+          (map-indexed #(-> %2
+                            (select-keys [:pledged :success?])
+                            (assoc :idx %
+                                   :levels (get-in %2 [:pa-stats :count]  [:pledged])))
+                       (filter #(-> % :pledged (> 0)) (read-all-data0-rsrcs)))))
+
+
+
+#_ (chart (filter #(-> % :pledged (> 0)) (read-all-data0-rsrcs)) [:hi-pleged 0]  [:pledged])
+#_ (chart (filter #(-> % :pledged (> 40000)) (read-all-data0-rsrcs)) [:hi-pleged 0]  [:pledged])
+
 #_ (chart (filter #(-> % :pledged (> 0)) (read-all-data0-rsrcs)) [:hi-backed 0]  [:pledged])
+#_ (chart (filter #(-> % :pledged (> 40000)) (read-all-data0-rsrcs)) [:hi-backed 0]  [:pledged])
 
 ; 15-19 levels
 #_ (chart (filter #(-> % :pledged (> 0)) (read-all-data0-rsrcs)) [:pa-stats :count]  [:pledged])
+#_ (chart (filter #(-> % :pledged (> 40000)) (read-all-data0-rsrcs)) [:pa-stats :count]  [:pledged])
 
-; data is missing?
+; 30 is enough
 #_ (chart (filter #(-> % :pledged (> 0)) (read-all-data0-rsrcs)) [:duration]  [:pledged])
+#_ (chart (filter #(-> % :pledged (> 20000)) (read-all-data0-rsrcs)) [:duration]  [:pledged])
+
+
 
 ; avg multi < 2
 #_ (chart (filter #(-> % :pledged (> 0)) (read-all-data0-rsrcs)) [:pam-stats :avg]  [:pledged])
+#_ (chart (filter #(-> % :pledged (> 40000)) (read-all-data0-rsrcs)) [:pam-stats :avg]  [:pledged])
 
  ; median multi < 2
 #_ (chart (filter #(-> % :pledged (> 0)) (read-all-data0-rsrcs)) [:pam-stats :median]  [:pledged])
@@ -473,9 +559,11 @@
 
 ; 500 - 10k
 #_ (chart (filter #(-> % :pledged (> 0)) (read-all-data0-rsrcs)) [:pa-stats :max]  [:pledged])
+#_ (chart (filter #(-> % :pledged (> 40000)) (read-all-data0-rsrcs)) [:pa-stats :max]  [:pledged])
 
 ; around 1k
 #_ (chart (filter #(-> % :pledged (> 0)) (read-all-data0-rsrcs)) [:pa-stats :avg]  [:pledged])
+#_ (chart (filter #(-> % :pledged (> 40000)) (read-all-data0-rsrcs)) [:pa-stats :avg]  [:pledged])
 
 ; 100 - 200
 #_ (chart (filter #(-> % :pledged (> 0)) (read-all-data0-rsrcs)) [:pa-stats :median]  [:pledged])
@@ -495,3 +583,17 @@
   "I don't do a whole lot ... yet."
   [& args]
   (println "Hello, World!"))
+
+
+
+
+
+
+
+
+
+
+
+
+
+

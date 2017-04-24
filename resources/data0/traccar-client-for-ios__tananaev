@@ -1,1 +1,1 @@
-{:pam-stats nil, :hi-pleged nil, :pab-pt {}, :backers-count 24, :goal nil, :pa-stats nil, :end-time 1390170421, :duration nil, :title "\nTraccar Client for iOS by Anton Tananaev &mdash; \nKickstarter\n", :hi-backed nil, :pledged 487.0, :pab [], :b-stats nil, :success? 1}
+{:pam-stats nil, :hi-pleged nil, :pab-pt {}, :backers-count 24, :goal nil, :pa-stats nil, :end-time 1390170421, :duration 30, :title "\nTraccar Client for iOS by Anton Tananaev &mdash; \nKickstarter\n", :hi-backed nil, :pledged 487.0, :pab [], :b-stats nil, :success? true, :wc 352}

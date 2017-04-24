@@ -1,0 +1,27 @@
+<head>
+  <script src="http://d3js.org/d3.v4.min.js"></script>
+  <script src="http://dimplejs.org/dist/dimple.v2.3.0.min.js"></script>
+</head>
+<body>
+  <script type="text/javascript">
+      var svg = dimple.newSvg("body", 1000, 1000);
+    var data = [];
+        
+    var chart = new dimple.chart(svg, data);
+    var xax = chart.addLogAxis("x", "levels");
+    xax.fontSize = "30px";
+    var yax = chart.addLogAxis("y", "pledged"); 
+    yax.fontSize = "30px";
+    chart.addSeries(["idx","success?"], dimple.plot.bubble);
+    
+    chart.defaultColors = [
+	new dimple.color("#00FF00","black",0.3),
+    new dimple.color("#FF0000","black",0.3),    
+	new dimple.color("#999999"),
+	new dimple.color("#BBBBBB"),
+	new dimple.color("#EEEEEE")
+]; 
+    
+    chart.draw();
+  </script>
+</body>

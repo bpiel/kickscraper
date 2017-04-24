@@ -1,1 +1,1 @@
-{:pam-stats nil, :hi-pleged nil, :pab-pt {}, :backers-count 0.0, :goal 5000.0, :pa-stats nil, :end-time 1478811391, :duration 30.0, :title "\nFlex Browser by Demetry Romanowski &mdash; \nKickstarter\n", :hi-backed nil, :pledged 0.0, :pab [], :b-stats nil, :success? 0}
+{:pam-stats nil, :hi-pleged nil, :pab-pt {}, :backers-count 0.0, :goal 5000.0, :pa-stats nil, :end-time 1478811391, :duration 30.0, :title "\nFlex Browser by Demetry Romanowski &mdash; \nKickstarter\n", :hi-backed nil, :pledged 0.0, :pab [], :b-stats nil, :success? false, :wc 282}
