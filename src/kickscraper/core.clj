@@ -1,7 +1,8 @@
 (ns kickscraper.core
   (:require [clj-http.client :as client]
             [cheshire.core :as json]
-            [com.hypirion.clj-xchart :as xc])
+            [com.hypirion.clj-xchart :as xc]
+            [clojure-manifold.mds :as mds])
   (:gen-class))
 
 (def ^:dynamic *sleepy-req?* false)
@@ -483,8 +484,7 @@
               {:title (str y " over " x)
                :render-style :scatter
                :theme :matlab
-               :y-axis {:logarithmic? true}
-               :x-axis {:logarithmic? true}
+
                :width 1500
                :height 950
                :legend {:visible? false}}))))
@@ -500,6 +500,37 @@
                                        (get-in % x)
                                        (< 0 (get-in % x)))
                                  (read-all-data0-rsrcs))))))
+
+(defn mk-matrix-row
+  [d]
+  ((juxt :wc
+         #(get-in % [:pa-stats :max])
+         #(get-in % [:pa-stats :count])
+         #(get-in % [:pam-stats :avg])
+         #(get-in % [:pam-stats :median])
+         #(get-in % [:pam-stats :max])) d))
+
+(defn mk-matrix'
+  []
+  (->> (read-all-data0-rsrcs)
+       (filter #(-> % :pledged (> 0)))
+       (remove #(some nil? (mk-matrix-row %)))))
+
+(defn mk-matrix
+  []
+  (mapv mk-matrix-row (mk-matrix')))
+
+#_(def m2 (mds/mds  (mk-matrix) 2))
+
+#_(def m2' (mapv (fn [xy m]
+                 (assoc m
+                        :x (first xy)
+                        :y (second xy)))
+               m2
+               (mk-matrix')))
+
+#_(chart m2' [:x] [:y])
+
 
 #_ (->json [:wc] :word-count)
 
@@ -583,17 +614,3 @@
   "I don't do a whole lot ... yet."
   [& args]
   (println "Hello, World!"))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
