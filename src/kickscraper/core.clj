@@ -534,6 +534,12 @@
 
 #_ (->json [:wc] :word-count)
 
+#_ (->json [:pam-stats :avg] :mult-avg)
+
+#_ (->json [:duration] :duration)
+
+#_ (->json [:backers-count] :backers-count)
+
 #_ (print-csv [:pledged] [:pab-pt 50])
 
 #_ (do-analysis)
